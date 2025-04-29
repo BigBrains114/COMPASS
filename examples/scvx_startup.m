@@ -2,7 +2,7 @@
 clear; close all
 
 % set path
-% run('../utils/set_path.m')
+run('../utils/set_path.m')
 
 % startup CVX
 cvx_startup

@@ -9,15 +9,15 @@ np = obj.np;
 N  = obj.ctrl.N;
 first   = 1:nx;
 last    = nx*(N-1)+1:nx*N;
-isptr   = strcmp(obj.ctrl.algo,'ptr');
+% isptr   = strcmp(obj.ctrl.algo,'ptr');
 
 % reference values
-wvc     = obj.ctrl.wvc;
+wvse    = obj.ctrl.wvse;
 wtr     = obj.ctrl.wtr;
-wtrp    = obj.ctrl.wtrp;
-if (~isptr)
-    tr = obj.output.tr;
-end
+% wtrp    = obj.ctrl.wtrp;
+% if (~isptr)
+%     tr = obj.output.tr;
+% end
 if (iter < 2) 
     xref = obj.iguess.x(:);
     uref = obj.iguess.u(:);
@@ -55,6 +55,15 @@ u_max = obj.bnds.u_max;
 nx_constraints_path = numel(obj.bnds.path.x);
 nu_constraints_path = numel(obj.bnds.path.u);
 
+xref_s = zeros(size(xref));
+uref_s = zeros(size(uref));
+for k = 1:N
+   xref_s(nx*(k-1)+(1:nx)) = iSx*(xref(nx*(k-1)+(1:nx))-cx);
+   uref_s(nu*(k-1)+(1:nu)) = iSu*(uref(nu*(k-1)+(1:nu))-cu);
+end
+pref_s = iSp*(pref-cp);
+
+
 cvx_tic;
 cvx_begin quiet
     cvx_solver(obj.ctrl.solver)
@@ -63,77 +72,69 @@ cvx_begin quiet
     variable xb(nx*N,1)
     variable ub(nu*N,1)
     variable pb(np,1)   % even in np=0, this is just an empty vector
-    variable vc(nx*N,1)
+    variable vs(nx*N,1) % changed virtual controls to virtual states
     
-    cost = obj.cost(xb,ub,pb,N) + wvc * norm(vc,1);
-    if (np>0)
-        if (isptr)
-            variable tr(N) nonnegative
-            variable tr_p nonnegative
-            cost = cost + wtr*norm(tr,1) + wtrp*norm(tr_p,1);
-        end
-    else % no parameters
-        if (isptr)
-            variable tr(N) nonnegative
-            cost = cost + wtr*norm(tr,1);
-        end
-    end
+    Jtr  = (xb-xref_s).'*(xb-xref_s) + (ub-uref_s).'*(ub-uref_s) + (pb-pref_s).'*(pb-pref_s);
+    Jvse = (xb-vs).'*(xb-vs); 
+    cost = obj.cost(xb,ub,pb,N) + wtr * Jtr + wvse * Jvse;
     minimize( cost )
     
     subject to
     
     % initial conditions
-    (Sx*xb(first)+cx) <= obj.bnds.init.x_max;
-    (Sx*xb(first)+cx) >= obj.bnds.init.x_min;
+    (Sx*vs(first)+cx) <= obj.bnds.init.x_max;
+    (Sx*vs(first)+cx) >= obj.bnds.init.x_min;
     
     % final conditions
-    (Sx*xb(last)+cx) <= obj.bnds.trgt.x_max;
-    (Sx*xb(last)+cx) >= obj.bnds.trgt.x_min;
+    (Sx*vs(last)+cx) <= obj.bnds.trgt.x_max;
+    (Sx*vs(last)+cx) >= obj.bnds.trgt.x_min;
     
     % bounds on parameters
     (Sp*pb+cp) <= obj.bnds.p_max;
     (Sp*pb+cp) >= obj.bnds.p_min;
     
     % dynamics
-    (SX*xb+cX) == EH*(SX*xb+cX) + BE*(SU*ub+cU) + ES*(Sp*pb+cp) + AR + vc;
+    (SX*xb+cX) == EH*(SX*xb+cX) + BE*(SU*ub+cU) + ES*(Sp*pb+cp) + AR;
     
     % parameter trust region
-    if (np>0 && isptr)
-        (pb-(iSp*(pref-cp)))'*(pb-(iSp*(pref-cp))) <= tr_p;
-    end
+    % if (np>0 && isptr)
+    %     (pb-(iSp*(pref-cp)))'*(pb-(iSp*(pref-cp))) <= tr_p;
+    % end
     
     % time loop
     for k = 1:N
        
         xbk   = xb(nx*(k-1)+1:nx*k);
-        xrefk = xref(nx*(k-1)+1:nx*k);
+        % xrefk = xref(nx*(k-1)+1:nx*k);
         ubk   = ub(nu*(k-1)+1:nu*k);
-        urefk = uref(nu*(k-1)+1:nu*k);
-        
+        % urefk = uref(nu*(k-1)+1:nu*k);
+        vsk   = vs(nx*(k-1)+1:nx*k);
         % trust region
-        if (isptr)
+        % if (isptr)
             % quadratic trust region
-            (xbk - (iSx*(xrefk-cx)))'*(xbk-(iSx*(xrefk-cx))) ...
-                + (ubk-(iSu*(urefk-cu)))'*(ubk-(iSu*(urefk-cu))) <= tr(k);
+            % (xbk - (iSx*(xrefk-cx)))'*(xbk-(iSx*(xrefk-cx))) ...
+            %     + (ubk-(iSu*(urefk-cu)))'*(ubk-(iSu*(urefk-cu))) <= tr(k);
             % linear trust region
 %             -tr(k) <= xbk - (iSx*(xrefk-cx)) <= tr(k);
 %             -tr(k) <= ubk - (iSu*(urefk-cu)) <= tr(k);
-        else
+        % else
             % quadratic trust region
 %             (xbk - (iSx*(xrefk-cx)))'*(xbk-(iSx*(xrefk-cx))) ...
 %                + (ubk-(iSu*(urefk-cu)))'*(ubk-(iSu*(urefk-cu))) <= tr;
            % quadratic trust region (state only)
 %             (xbk - (iSx*(xrefk-cx)))'*(xbk-(iSx*(xrefk-cx))) <= tr;
             % linear trust region
-            -tr <= xbk - (iSx*(xrefk-cx)) <= tr;
-            -tr <= ubk - (iSu*(urefk-cu)) <= tr;
-        end
+        %     -tr <= xbk - (iSx*(xrefk-cx)) <= tr;
+        %     -tr <= ubk - (iSu*(urefk-cu)) <= tr;
+        % end
         
         % linear bounds
         (Sx*xbk+cx) <= x_max;
         (Sx*xbk+cx) >= x_min;
         (Su*ubk+cu) <= u_max;
         (Su*ubk+cu) >= u_min;
+        (Sx*vsk+cx) <= x_max;
+        (Sx*vsk+cx) >= x_min;
         
         % state path constraints
         for xcnstr = 1:nx_constraints_path
@@ -162,8 +163,8 @@ timing = cvx_toc;
 obj.output.x    = SX*xb+cX;
 obj.output.u    = SU*ub+cU;
 obj.output.p    = Sp*pb+cp;
-obj.output.vc   = vc;
-obj.output.tr   = tr;
+obj.output.vse  = Jvse;
+obj.output.tr   = Jtr;
 obj.output.cost = cvx_optval;
 
 % compute max (scaled) change in state and/or control

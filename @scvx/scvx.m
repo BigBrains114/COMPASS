@@ -107,16 +107,16 @@ classdef scvx < matlab.mixin.Copyable
             t0_max = obj.bnds.init.t_max;
             tf_free = (tf_min~=tf_max);
             t0_free = (t0_min~=t0_max);  
-            if (tf_free && t0_free)
-                obj.bnds.p_min = [ tf_min; t0_min; obj.bnds.p_min ];
-                obj.bnds.p_max = [ tf_max; t0_max; obj.bnds.p_max ];
-            elseif (tf_free)
-                obj.bnds.p_min = [ tf_min; obj.bnds.p_min ];
-                obj.bnds.p_max = [ tf_max; obj.bnds.p_max ];
-            elseif (t0_free)
-                obj.bnds.p_min = [ t0_min; obj.bnds.p_min ];
-                obj.bnds.p_max = [ t0_max; obj.bnds.p_max ];
-            end
+            % if (tf_free && t0_free)
+            %     obj.bnds.p_min = [ tf_min; t0_min; obj.bnds.p_min ];
+            %     obj.bnds.p_max = [ tf_max; t0_max; obj.bnds.p_max ];
+            % elseif (tf_free)
+            %     obj.bnds.p_min = [ tf_min; obj.bnds.p_min ];
+            %     obj.bnds.p_max = [ tf_max; obj.bnds.p_max ];
+            % elseif (t0_free)
+            %     obj.bnds.p_min = [ t0_min; obj.bnds.p_min ];
+            %     obj.bnds.p_max = [ t0_max; obj.bnds.p_max ];
+            % end
             obj.final_time_free     = tf_free;
             obj.initial_time_free   = t0_free;
             
@@ -126,7 +126,7 @@ classdef scvx < matlab.mixin.Copyable
             % compute the initial (nonlinear) cost
             obj.last_J = obj.cost(obj.iguess.x(:),obj.iguess.u(:),...
                         obj.iguess.p(:),obj.ctrl.N) ...
-                        + obj.ctrl.wvc * sum(obj.defects);
+                        + obj.ctrl.wvse * sum(obj.defects);
                         
             % initial trust region
             obj.output.tr  = 0.5;
@@ -289,12 +289,12 @@ classdef scvx < matlab.mixin.Copyable
             % print_stats(iter,varxu,reject,change) prints the results of
             % the most recent iterate to the command window.
       
-            vc1 = norm(obj.output.vc,1);
+            vse1 = norm(obj.output.vse,1);
             tr1 = norm(obj.output.tr,1);
             J   = obj.output.cost;
             feas = obj.output.feas;
-            fprintf('Iter: %02d | VC: %2.2e | TR: %2.2e | cost: %+2.2e',...
-                iter,vc1,tr1,J);
+            fprintf('Iter: %02d | VSE: %2.2e | TR: %2.2e | cost: %+2.2e',...
+                iter,vse1,tr1,J);
             fprintf(' | max_var: %2.2e',varxu)
             fprintf(' | feas: %d |  Reject: %d%s\n',feas,reject,change);
         end

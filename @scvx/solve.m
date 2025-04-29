@@ -16,18 +16,18 @@ for iter = 1:obj.ctrl.iter_max
     obj.convexify();
            
     % perform update step
-    if (strcmp(obj.ctrl.algo,'ptr'))
-        reject = false;
-        change = '';
-    else
-        [reject,change] = obj.update_step();
-    end
+    % if (strcmp(obj.ctrl.algo,'ptr'))
+    %     reject = false;
+    %     change = '';
+    % else
+    %     [reject,change] = obj.update_step();
+    % end
         
     % check convergence and exit if done
     converged = check_convergence(obj,varxu);
     
     % print some stuff
-    print_status(obj,iter,varxu,reject,change);
+    print_status(obj,iter,varxu,false,'');
     if (converged)
         break;
     end  

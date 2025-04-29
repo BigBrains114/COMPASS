@@ -74,7 +74,7 @@ function discretize(obj)
         P = scvx.rk4(@(t,P)deriv(t,P,u,sk),tspan,P0);
         P = P(end, :); % Get the final augmented state vector
 
-        xpk1 = P(idx_x);
+        xpk1 = reshape(P(idx_x),nx,1);
         Ak   = reshape(P(idx_PA), nx, nx);
         Bmk  = reshape(P(idx_PBm), nx, nu);
         if p_idx < np && k == kp(p_idx) - 1 && kd(p_idx) == 0 
@@ -82,7 +82,7 @@ function discretize(obj)
         else
             Bpk   = reshape(P(idx_PBp), nx, nu);
         end
-        Sk_int    = P(idx_PS);
+        Sk_int    = reshape(P(idx_PS),nx,1);
 
         % --- Calculate Residual Term d_k (Eq. 11 format) ---
         % d_k = x_prop_{k+1} - (A_k*x_k_ref + Bm_k*u_k_ref + Bp_k*u_{k+1}_ref + Sk_int*sk_ref)
@@ -123,10 +123,10 @@ function discretize(obj)
 
 
     function dP = deriv(tau,P,u,p)
-        x_tau = P(idx_x);
+        x_tau = reshape(P(idx_x), nx, 1);
         PA    = reshape(P(idx_PA), nx, nx);
         PBm   = reshape(P(idx_PBm), nx, nu);
-        PS    = P(idx_PS);
+        PS    = reshape(P(idx_PS), nx, 1);
 
         if p_idx < np && k == kp(p_idx) - 1 && kd(p_idx) == 0
             u_tau = interp1([tspan(1), tspan(end)],u',tau,'previous')';
@@ -134,26 +134,25 @@ function discretize(obj)
             f = obj.dynamics(obj, tau, x_tau, u_tau, p);
             [A,B,C] = obj.linearize(obj,tau,x_tau,u_tau,p);
             
-            dx = p * f;
-            dPA = (p * A) * PA;
             dBm  = (p * A * PBm) + (p * B);
             dBp  = zeros(nx, nu);
-            dS   = (p * A * PS) + C;
         else
             u_tau = interp1([tspan(1), tspan(end)],u',tau,'linear')';
             PBp   = reshape(P(idx_PBp), nx, nu);
+            
             lm    = (tspan(end)-tau)/(tspan(end)-tspan(1));
             lp    = (tau-tspan(1))/(tspan(end)-tspan(1));
             
             f = obj.dynamics(obj, tau, x_tau, u_tau, p);
             [A,B,C] = obj.linearize(obj,tau,x_tau,u_tau,p);
 
-            dx = p * f;
-            dPA = (p * A) * PA;
             dBm  = (p * A * PBm) + (p * B * lm);
             dBp  = (p * A * PBp) + (p * B * lp);
-            dS   = (p * A * PS) + C;
         end
+
+        dx = p * f;
+        dPA = (p * A) * PA;
+        dS   = (p * A * PS) + C;
 
         dP = [ dx; dPA(:); dBm(:); dBp(:); dS(:) ];
     end 
