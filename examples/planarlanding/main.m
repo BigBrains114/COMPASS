@@ -6,6 +6,8 @@ auxdata         = struct;
 auxdata.g       = -1.0;
 auxdata.alpha   = 1/(9.806*3);
 auxdata.inertia = 0.5;
+auxdata.k_phase = [2 7 12];
+auxdata.k_disc = [0 0 1];
 
 % boundary conditions
 bnds = struct;
@@ -28,8 +30,8 @@ bnds.x_min = [ 2.0; -10.0; -1.0; -5.0; -5.0; -pi; -1.0 ];
 bnds.x_max = [ 5.0; 10.0; 25.0; 5.0; 5.0; pi; 1.0 ];
 bnds.u_min = [ 1.5; -0.1 ];
 bnds.u_max = [ 6.5; 0.1 ];
-bnds.p_min = []; % excluding final time
-bnds.p_max = []; % excluding final time
+bnds.p_min = [0.6; 0.6; 0.6; 0.6;]; % excluding final time
+bnds.p_max = [10; 10; 10; 10;]; % excluding final time
 bnds.path.x     = {};
 bnds.path.x_cvx = {};
 bnds.path.u     = {};
@@ -55,7 +57,7 @@ ctrl.algo       = 'ptr';
 ctrl.solver     = 'ecos';
 
 % initialize scvx problem with a name and dimensions (name,nx,nu,np)
-O = scvx('planarlanding',7,2,1);
+O = scvx('planarlanding',7,2,4);
 
 % attach structs to the created object
 O.cost      = @(x,u,p,N)( -x(7*(ctrl.N-1)+1) ); % cost function
@@ -74,7 +76,7 @@ x0(4,:) = linspace(-4,0,ctrl.N);
 x0(5,:) = linspace(-2,-0.1,ctrl.N);
 u0      = zeros(O.nu,O.ctrl.N);
 u0(1,:) = [ bnds.u_max(1)*ones(1,4), bnds.u_min(1)*ones(1,2) bnds.u_max(1)*ones(1,ctrl.N-6) ];
-p0      = 8.0;
+p0      = [5.0; 1.0; 1.0; 1.0];
 
 % call initializing function -- parameters come first, they are the only
 % mandatory thing to guess.
