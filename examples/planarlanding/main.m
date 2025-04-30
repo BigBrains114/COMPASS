@@ -6,8 +6,8 @@ auxdata         = struct;
 auxdata.g       = -1.0;
 auxdata.alpha   = 1/(9.806*3);
 auxdata.inertia = 0.5;
-auxdata.k_phase = [2 7 12];
-auxdata.k_disc = [0 0 1];
+auxdata.kp = [2 7 12];
+auxdata.kd = [0 0 1];
 
 % boundary conditions
 bnds = struct;
@@ -22,7 +22,7 @@ bnds.init.t_max = 0.0;
 bnds.init.x_min = [ 5.0; 6.0; 24.0; -4.0; -2.0; -pi; 0.0 ];
 bnds.init.x_max = [ 5.0; 6.0; 24.0; -4.0; -2.0; pi; 0.0 ];
 bnds.trgt.t_min = 4.0;
-bnds.trgt.t_max = 12.0;
+bnds.trgt.t_max = 15.0;
 bnds.trgt.x_min = [ 2.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0 ];
 bnds.trgt.x_max = [ 5.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0 ];
 
@@ -30,8 +30,8 @@ bnds.x_min = [ 2.0; -10.0; -1.0; -5.0; -5.0; -pi; -1.0 ];
 bnds.x_max = [ 5.0; 10.0; 25.0; 5.0; 5.0; pi; 1.0 ];
 bnds.u_min = [ 1.5; -0.1 ];
 bnds.u_max = [ 6.5; 0.1 ];
-bnds.p_min = [0.6; 0.6; 0.6; 0.6;]; % excluding final time
-bnds.p_max = [10; 10; 10; 10;]; % excluding final time
+bnds.p_min = [0.2; 0.2; 0.2; 0.2;]; % excluding final time
+bnds.p_max = [1; 1; 1; 1;]; % excluding final time
 bnds.path.x     = {};
 bnds.path.x_cvx = {};
 bnds.path.u     = {};
@@ -40,7 +40,7 @@ bnds.path.u_cvx = {};
 ctrl = struct;
 ctrl.N          = 20;
 ctrl.Nsub       = 10;
-ctrl.iter_max   = 20;
+ctrl.iter_max   = 10;
 ctrl.wvse        = 1e2;
 ctrl.wtr        = 5e-2;
 ctrl.wtrp       = 1e-2;
@@ -85,7 +85,7 @@ O.init(p0,x0,u0);
 % solve the problem or grab a solution from a file
 exitcode = O.solve();
 % O.attach_file('../cpp_hp/data/optimal_xup.txt');
-
+%%
 % perform open loop propagation on the last control
 result = O.open_loop();
 
@@ -99,13 +99,13 @@ set(0,'defaulttextinterpreter','latex','defaultAxesFontSize',16,...
 % computed (discrete) solution
 X   = reshape( O.output.x, O.nx, O.ctrl.N );
 U   = reshape( O.output.u, O.nu, O.ctrl.N );
-T   = O.output.p .* O.auxdata.tau;
+T   = get_time(O);
 m   = X(1,:);
 r   = X(2:3,:);
 v   = X(4:5,:);
 th  = X(6,:);
 w   = X(7,:);
-Tlim = [ 0 O.output.p ];
+Tlim = [ 0 T(end) ];
 
 figure(1), clf
 subplot(3,1,1), hold on, grid on, box on

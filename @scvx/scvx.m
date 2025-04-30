@@ -399,6 +399,17 @@ classdef scvx < matlab.mixin.Copyable
             s.defects = obj.defects;
             s.last_J = obj.last_J;
         end
+
+        function T = get_time(obj)
+            T = zeros(1,obj.ctrl.N);
+            p_idx = 1;
+            for k = 1:obj.ctrl.N-1
+                if p_idx < obj.np && k > obj.auxdata.kp(p_idx) - 1
+                     p_idx = p_idx + 1;
+                end
+                T(k+1) = T(k) + obj.output.p(p_idx);
+            end
+        end
     end
     
     

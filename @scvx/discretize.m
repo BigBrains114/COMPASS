@@ -4,8 +4,8 @@ function discretize(obj)
     nu  = obj.nu;
     np  = obj.np;
     N   = obj.ctrl.N;
-    kp  = obj.auxdata.k_phase;
-    kd  = obj.auxdata.k_disc;
+    kp  = obj.auxdata.kp;
+    kd  = obj.auxdata.kd;
     tau = obj.auxdata.tau;
 
     % Determine if first iteration to use initial guess
