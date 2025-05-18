@@ -31,7 +31,7 @@ p   = obj.output.p;
 
 % propagate dynamics
 [~,x] = ode45(@(t,x)deriv(t,x,u,p),tspan,x0);
-
+x = x.';
 % compute final state error
 xf  = obj.output.x(nx*(N-1)+(1:nx));
 err = norm(xf-x(:,end),2);

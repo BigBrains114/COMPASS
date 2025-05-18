@@ -6,7 +6,6 @@ function discretize(obj)
     N   = obj.ctrl.N;
     kp  = obj.auxdata.kp;
     kd  = obj.auxdata.kd;
-    tau = obj.auxdata.tau;
 
     % Determine if first iteration to use initial guess
     first_iter = isempty(obj.output) || ~isfield(obj.output,'x') || isempty(obj.output.x);
@@ -14,20 +13,29 @@ function discretize(obj)
     % Get reference parameters (phase durations)
     if (first_iter)
         pref = obj.iguess.p; % Size np x 1
+        t = obj.time;
     else
         pref = obj.output.p;
+        t   = obj.get_time();
     end
 
     % --- Initialize Output Matrices (Sparse Assembly Format) ---
     % Use zeros instead of spalloc, similar to original discretize.m
-    EH = zeros(nx*N, nx*N); % Will hold Ad blocks
-    BE = zeros(nx*N, nu*N); % Will hold Bm, Bp blocks
-    ES = zeros(nx*N, np);   % Will hold S blocks (mapped to parameters)
-    AR = zeros(nx*N, 1);   % Will hold R (residual/offset d_k) blocks
+    Ad = zeros(nx*N, nx*N); % Will hold Ad blocks
+    Bd = zeros(nx*N, nu*N); % Will hold Bm, Bp blocks
+    Sd = zeros(nx*N, np);   % Will hold S blocks (mapped to parameters)
+    Rd = zeros(nx*N, 1);   % Will hold R (residual/offset d_k) blocks
+    
+    %%% MODIFIED %%%
+    % Ad = zeros(nx*(N-1), nx*(N-1)); % Will hold Ad blocks
+    % Bd = zeros(nx*(N-1), nu*(N-1)); % Will hold Bm, Bp blocks
+    % Sd = zeros(nx*(N-1), np);   % Will hold S blocks (mapped to parameters)
+    % Rd = zeros(nx*(N-1), 1);   % Will hold R (residual/offset d_k) blocks
+    %%% MODIFIED %%%
 
     % Set identity for first block of EH (x_1 = x_1)
     % Use scvx.set_block [cite: 5]
-    EH = scvx.set_block(EH, eye(nx), 1, 1);
+    Ad = scvx.set_block(Ad, eye(nx), 1, 1);
 
     obj.defects = zeros(N-1, 1); % Initialize defects vector
 
@@ -45,9 +53,10 @@ function discretize(obj)
 
     % --- Loop Through Time Intervals ---
     p_idx = 1; % Current phase index (1 to np)
-
+    
+    % figure; tiledlayout("flow");
     for k = 1:N-1
-        tspan = linspace(tau(k),tau(k+1),obj.ctrl.Nsub);
+        tspan = linspace(0,1,obj.ctrl.Nsub);
         if (first_iter)
             xk = obj.iguess.x(:,k);
             xk1 = obj.iguess.x(:,k+1);
@@ -90,32 +99,41 @@ function discretize(obj)
 
         % --- Assemble Sparse Matrices using scvx.set_block [cite: 5] ---
         % Note: Row index k+1 corresponds to constraint linking k and k+1
-        EH = scvx.set_block(EH, Ak,      k+1, k);     % Coefficient of x_k
+        Ad = scvx.set_block(Ad, Ak,      k+1, k);     % Coefficient of x_k
         % EH already has Identity on diagonal from initialization or previous step
 
-        BE = scvx.set_block(BE, Bmk,     k+1, k);     % Coeff of u_k
-        BE = scvx.set_block(BE, Bpk,     k+1, k+1);   % Coeff of u_{k+1}
+        Bd = scvx.set_block(Bd, Bmk,     k+1, k);     % Coeff of u_k
+        Bd = scvx.set_block(Bd, Bpk,     k+1, k+1);   % Coeff of u_{k+1}
 
         % ES: Contains Sk mapped to the correct parameter column
-        ES = scvx.set_block(ES, Sk_int,  k+1, p_idx); % Coeff of p_phase_idx
+        Sd = scvx.set_block(Sd, Sk_int,  k+1, p_idx); % Coeff of p_phase_idx
 
         % AR: Contains the residual/offset term dk
-        AR = scvx.set_block(AR, dk,      k+1, 1);
+        Rd = scvx.set_block(Rd, dk,      k+1, 1);
 
         % --- Optional: Calculate Defect (for monitoring) ---
         defect = norm(xk1 - xpk1, 2);
         obj.defects(k) = defect;
-
+        
+        % for id = 1:nx
+        %     nexttile(id); hold on;
+        %     plot(t(k), xk(id),'ob'); 
+        %     plot(t(k+1), xpk1(id), '+r');
+        %     if k == N-1
+        %         plot(t(k+1), xk1(id),'ob'); 
+        %     end
+        %     hold off;
+        % end
     end
 
     % --- Store Results in obj.output ---
     % Ad includes the negative of A_k blocks AND the Identity blocks
     % Need to subtract Identity to match original Ad definition if needed,
     % but EH as constructed here represents: I*x_{k+1} - Ak*x_k = ...
-    obj.output.Ad   = EH; % Directly use EH (includes I blocks)
-    obj.output.Bd   = BE; % Directly use BE (includes Bm, Bp blocks)
-    obj.output.Sd   = ES;
-    obj.output.Rd   = AR; % Corresponds to the offset d_k
+    obj.output.Ad   = Ad; % Directly use EH (includes I blocks)
+    obj.output.Bd   = Bd; % Directly use BE (includes Bm, Bp blocks)
+    obj.output.Sd   = Sd;
+    obj.output.Rd   = Rd; % Corresponds to the offset d_k
 
     % --- Assess Feasibility (Optional, based on defect) ---
     feas = all(obj.defects <= obj.ctrl.feas_tol);
@@ -129,8 +147,8 @@ function discretize(obj)
         PS    = reshape(P(idx_PS), nx, 1);
 
         if p_idx < np && k == kp(p_idx) - 1 && kd(p_idx) == 0
-            u_tau = interp1([tspan(1), tspan(end)],u',tau,'previous')';
-            
+            % u_tau = interp1([tspan(1), tspan(end)],u',tau,'previous')';
+            u_tau = u(:,1);
             f = obj.dynamics(obj, tau, x_tau, u_tau, p);
             [A,B,C] = obj.linearize(obj,tau,x_tau,u_tau,p);
             

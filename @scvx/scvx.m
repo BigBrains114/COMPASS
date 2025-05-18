@@ -13,6 +13,7 @@ classdef scvx < matlab.mixin.Copyable
         bnds
         ctrl
         iguess
+        time
     end
     
     % Dynamics and Linearization function
@@ -25,6 +26,7 @@ classdef scvx < matlab.mixin.Copyable
     % Observable properties that cannot be set by the user
     properties (SetAccess = private, GetAccess = public)
         output
+        result
     end
     
     % Hidden properties that are set internally but still available to the
@@ -81,7 +83,7 @@ classdef scvx < matlab.mixin.Copyable
             if (numel(p)~=obj.np)
                 error('Size of initial guess for parameters is not right')
             end
-            obj.auxdata.tau = linspace(0,1,obj.ctrl.N);
+            % obj.auxdata.tau = linspace(0,1,obj.ctrl.N);
             obj.iguess.p = p;
             if (nargin<3)
                 % initial state guess
@@ -101,12 +103,12 @@ classdef scvx < matlab.mixin.Copyable
                 end
             end
             % initialize free final & initial time flags
-            tf_min = obj.bnds.trgt.t_min;
-            tf_max = obj.bnds.trgt.t_max;
-            t0_min = obj.bnds.init.t_min;
-            t0_max = obj.bnds.init.t_max;
-            tf_free = (tf_min~=tf_max);
-            t0_free = (t0_min~=t0_max);  
+            % tf_min = obj.bnds.trgt.t_min;
+            % tf_max = obj.bnds.trgt.t_max;
+            % t0_min = obj.bnds.init.t_min;
+            % t0_max = obj.bnds.init.t_max;
+            % tf_free = (tf_min~=tf_max);
+            % t0_free = (t0_min~=t0_max);  
             % if (tf_free && t0_free)
             %     obj.bnds.p_min = [ tf_min; t0_min; obj.bnds.p_min ];
             %     obj.bnds.p_max = [ tf_max; t0_max; obj.bnds.p_max ];
@@ -117,8 +119,8 @@ classdef scvx < matlab.mixin.Copyable
             %     obj.bnds.p_min = [ t0_min; obj.bnds.p_min ];
             %     obj.bnds.p_max = [ t0_max; obj.bnds.p_max ];
             % end
-            obj.final_time_free     = tf_free;
-            obj.initial_time_free   = t0_free;
+            % obj.final_time_free     = tf_free;
+            % obj.initial_time_free   = t0_free;
             
             % convexify along initial guess
             obj.convexify();
@@ -129,8 +131,8 @@ classdef scvx < matlab.mixin.Copyable
                         + obj.ctrl.wvse * sum(obj.defects);
                         
             % initial trust region
-            obj.output.tr  = 0.5;
-            obj.output.trp = 0.1;
+            % obj.output.tr  = 0.5;
+            % obj.output.trp = 0.1;
         end % init
         
         function attach(obj,x,u,p)
@@ -283,7 +285,7 @@ classdef scvx < matlab.mixin.Copyable
         end
               
         % What data to display as we proceed through the iterations
-        function print_status(obj,iter,varxu,reject,change)
+        function print_status(obj,iter,varxu,convflag,change)
             %PRINT_STATUS
             %
             % print_stats(iter,varxu,reject,change) prints the results of
@@ -296,7 +298,7 @@ classdef scvx < matlab.mixin.Copyable
             fprintf('Iter: %02d | VSE: %2.2e | TR: %2.2e | cost: %+2.2e',...
                 iter,vse1,tr1,J);
             fprintf(' | max_var: %2.2e',varxu)
-            fprintf(' | feas: %d |  Reject: %d%s\n',feas,reject,change);
+            fprintf(' | feas: %d |  conv: %d%s\n',feas,convflag,change);
         end
         
         function converged = check_convergence(obj,varxu)
@@ -305,7 +307,7 @@ classdef scvx < matlab.mixin.Copyable
             %   converged = check_convergence(obj,varxu) checks the value
             %   of varxu against the convergence tolerance given in
             %   obj.ctrl.cvrg_tol specified by the user
-            if (varxu < obj.ctrl.cvrg_tol)
+            if (varxu < obj.ctrl.cvrg_tol && obj.output.feas)
                 converged = true;
             else
                 converged = false;

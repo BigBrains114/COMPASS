@@ -12,6 +12,11 @@ for iter = 1:obj.ctrl.iter_max
     % solve step
     varxu = solve_socp(obj,scaling,iter);
     
+    % check open loop 
+    obj.result{iter} = open_loop(obj);
+    
+    % plot_trajectory_data(obj,obj.result{iter});
+    
     % re-convexify along new solution (needed to get new defects)
     obj.convexify();
            
@@ -27,7 +32,7 @@ for iter = 1:obj.ctrl.iter_max
     converged = check_convergence(obj,varxu);
     
     % print some stuff
-    print_status(obj,iter,varxu,false,'');
+    print_status(obj,iter,varxu,converged,'');
     if (converged)
         break;
     end  
