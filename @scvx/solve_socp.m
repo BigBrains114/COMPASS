@@ -129,50 +129,51 @@ cvx_begin quiet
             sbkm1  = pref(p_idx);
         end
         
-        switch k
-            case k >= 1 && k < kp(1)        % unpowered
-                
-                vsk(2) >= obj.auxdata.h_trig;  % minimum altitude before TD
-                uk(1) == 0;           % zero inital thrust
 
-            case k >= kp(1) && k < kp(2)    % high thrust
-                
-                vsk(2) >= obj.auxdata.h_trig;  % minimum altitude before TD
-                
-                % control bounds (eq 24 and 25) 
-                uk >= [3*obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
-                uk <= [3*obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
+        if k >= 1 && k < kp(1)        % unpowered
+            
+            vsk(2) >= obj.auxdata.h_trig;  % minimum altitude before TD
+            uk(1) == 0;           % zero inital thrust
 
-            case k >= kp(2) && k < kp(3)    % low thrust
+        elseif k >= kp(1) && k < kp(2)    % high thrust
+            
+            vsk(2) >= obj.auxdata.h_trig;  % minimum altitude before TD
+            
+            % control bounds (eq 24 and 25) 
+            % uk >= [3*obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
+            % uk <= [3*obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
 
-                vsk(2) >= obj.auxdata.h_trig; % minimum altitude before TD
+        elseif k >= kp(2) && k < kp(3)    % low thrust
 
-                if k == kp(2)
-                    uk(2) == ubkm1(2);
-                    uk(1) >= obj.auxdata.Tmin;
-                    uk(1) <= obj.auxdata.Tmax;
-                else
-                    % control bounds (eq 27 and 28) 
-                    uk >= [obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
-                    uk <= [obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
-                end
-            case k >= kp(3)                 % terminal
-                % control bounds (eq 29 and 30f) 
-                uk >= [obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
-                uk <= [obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
-                
-                if k == kp
-                    vsk(2) == obj.auxdata.h_trig;
-                    abs(vsk(3)) <= tan(obj.auxdata.gs)*obj.auxdata.h_trig;
-                else
-                    vsk(2) <= obj.auxdata.h_trig;
-                    abs(vsk(3)) <= tan(obj.auxdata.gs)*vsbk(2);
-                end
+            vsk(2) >= obj.auxdata.h_trig; % minimum altitude before TD
 
-               norm(vsk(4:5)) <= obj.auxdata.vmax;
-               abs(vsk(6)) <= obj.auxdata.amax;
-               abs(vsk(7)) <= obj.auxdata.wmax;
-               
+            if k == kp(2)
+                uk(2) == ubkm1(2);
+                % uk(1) >= obj.auxdata.Tmin;
+                % uk(1) <= obj.auxdata.Tmax;
+            else
+                % control bounds (eq 27 and 28) 
+                % uk >= [obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
+                % uk <= [obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
+            end
+        elseif k >= kp(3)                 % terminal
+            % control bounds (eq 29 and 30f) 
+            % uk >= [obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
+            % uk <= [obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
+            
+            if k == kp
+                vsk(2) == obj.auxdata.h_trig;
+                abs(vsk(3)) <= tan(obj.auxdata.gs)*obj.auxdata.h_trig;
+            else
+                vsk(2) <= obj.auxdata.h_trig;
+                abs(vsk(3)) <= tan(obj.auxdata.gs)*vsbk(2);
+            end
+
+           norm(vsk(4:5)) <= obj.auxdata.vmax;
+           abs(vsk(6)) <= obj.auxdata.amax;
+           abs(vsk(7)) <= obj.auxdata.wmax;
+        else 
+            error("Grid point out of range.");
         end
 
         % linear bounds
@@ -222,7 +223,7 @@ obj.output.tr   = Jtr;
 obj.output.cost = cvx_optval;
 
 
-disp("final state error norm: " + norm(obj.output.x(xf_idx + (N-1)*nx) - obj.auxdata.xf))
+% disp("final state error norm: " + norm(obj.output.x(xf_idx + (N-1)*nx) - obj.auxdata.xf))
 
 % compute max (scaled) change in state and/or control
 temp = 0.0;

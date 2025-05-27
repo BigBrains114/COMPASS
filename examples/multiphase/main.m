@@ -7,7 +7,7 @@ auxdata.kp      = [2 7 12];
 auxdata.kd      = [0 0 1];
 auxdata.x0      = [1e5; 1e3; 1e2; -90; 0; pi/2; 0];
 auxdata.xf      = [0; 0; 0; 0; 0; 0];
-auxdata.xf_idx  = 2:7;
+auxdata.xf_idx  = 2:7; 
 auxdata.h_trig  = 100;
 auxdata.Tmin    = 880e3;
 auxdata.Tmax    = 2200e3;
@@ -21,8 +21,8 @@ auxdata.wmax    = deg2rad(2.5);
 % boundary conditions
 bnds = struct;
 %            [ m; x; z; vx; vz; a; w; ];   
-bnds.x_min = [  85e3;   0; -1e2; -1e2; -3e1; -pi; -.1 ];
-bnds.x_max = [ 100e3; 1e3;  1e2;  1e1;  3e1;  pi;  .1 ];
+bnds.x_min = [  85e3;   0; -1e2; -1e2; -3e1; -pi; -pi/2 ];
+bnds.x_max = [ 100e3; 1e3;  1e2;  1e1;  3e1;  pi;  pi/2 ];
 bnds.u_min = [        0; -deg2rad(10) ];
 bnds.u_max = [ 3*2200e3;  deg2rad(10) ];
 bnds.p_min = [ .6; .6; .6; .6;]; 
@@ -35,13 +35,13 @@ bnds.path.u_cvx = {};
 ctrl = struct;
 ctrl.N          = 16;
 ctrl.Nsub       = 10;
-ctrl.iter_max   = 25;
+ctrl.iter_max   = 15;
 ctrl.wc         = 1e0;
-ctrl.wvse       = 1e1;
-ctrl.wtr        = 1e-2;
+ctrl.wvse       = 1e2;
+ctrl.wtr        = 1e1;
 % ctrl.wtrp       = 1e-2;
-ctrl.cvrg_tol   = 1e-2;
-ctrl.feas_tol   = 1e-2;
+ctrl.cvrg_tol   = 1e-1;
+ctrl.feas_tol   = 1e0;
 % ctrl.rho0       = 0.0;
 % ctrl.rho1       = 0.1;
 % ctrl.rho2       = 0.9;
@@ -108,7 +108,7 @@ th  = X(6,:);
 w   = X(7,:);
 Tlim = [ 0 T(end) ];
 
-figure(1), clf
+figure, clf
 subplot(3,1,1), hold on, grid on, box on
 plot(T,m,'ko','MarkerFaceColor','k','HandleVisibility','off')
 plot(result.t,result.x(1,:))
@@ -125,7 +125,7 @@ plot(result.t,result.x(4:5,:))
 set(gca,'Xlim',Tlim)
 ylabel('Velocity')
 
-figure(2), clf
+figure, clf
 subplot(2,1,1), hold on, grid on, box on
 plot(T,th,'ko','MarkerFaceColor','k','HandleVisibility','off')
 plot(result.t,result.x(6,:))
@@ -137,7 +137,7 @@ plot(result.t,result.x(7,:))
 set(gca,'Xlim',Tlim)
 ylabel('Angular rate')
 
-figure(3), clf
+figure, clf
 subplot(2,1,1), hold on, grid on, box on
 plot(T,U(1,:),'b-o')
 plot([0 T(auxdata.kp(1))],[O.bnds.u_min(1) O.bnds.u_min(1)],'r--')
@@ -158,7 +158,7 @@ set(gca,'Xlim',Tlim,'Ylim',[1.5*(rad2deg(O.bnds.u_min(2))),1.5*(rad2deg(O.bnds.u
 ylabel('Gimbal Angle')
 xlabel('Time')
 
-figure(4), clf, hold on, grid on, box on, axis equal
+figure, clf, hold on, grid on, box on, axis equal
 plot(r(2,:),r(1,:),'ko','MarkerFaceColor','k')
 plot(result.x(3,:),result.x(2,:),'b')
 ylabel('$z_{\mathcal{I}}$')

@@ -1,4 +1,4 @@
-function plot_trajectory_data(obj, result_open_loop)
+function plot_trajectory_data(obj, result_open_loop, iter)
 % plot_trajectory_data Generates plots for states and controls from an scvx object.
 %
 % Inputs:
@@ -50,9 +50,9 @@ if T_discrete(end) == 0 && obj.ctrl.N > 1 % Handle case of zero total time if al
 end
 
 % --- Figure 1: Mass, Position, Velocity ---
-figure('Name', 'Mass, Position, Velocity vs. Time');
+f1 = figure(1);
 clf;
-
+f1.Name = 'Mass, Position, Velocity vs. Time';
 % Mass
 subplot(3,1,1); hold on; grid on; box on;
 plot(T_discrete, m_discrete, 'ko-', 'MarkerFaceColor', 'k', 'DisplayName', 'Optimized Mass');
@@ -92,9 +92,9 @@ title('Velocity vs. Time');
 legend('show', 'Location', 'best');
 
 % --- Figure 2: Attitude and Angular Rate ---
-figure('Name', 'Attitude, Angular Rate vs. Time');
+f2 = figure(2);
 clf;
-
+f2.Name = 'Attitude, Angular Rate vs. Time';
 % Attitude Angle
 subplot(2,1,1); hold on; grid on; box on;
 plot(T_discrete, rad2deg(att_discrete), 'ko-', 'MarkerFaceColor', 'k', 'DisplayName', 'Optimized Attitude');
@@ -119,9 +119,9 @@ title('Angular Rate vs. Time');
 legend('show', 'Location', 'best');
 
 % --- Figure 3: Controls ---
-figure('Name', 'Controls vs. Time');
+f3 = figure(3);
 clf;
-
+f3.Name = 'Controls vs. Time';
 % Thrust
 subplot(2,1,1); hold on; grid on; box on;
 plot(T_discrete, U_discrete(1,:), 'bo-', 'MarkerFaceColor', 'b', 'DisplayName', 'Optimized Thrust');
@@ -160,8 +160,9 @@ title('Gimbal Angle vs. Time');
 legend('show', 'Location', 'best');
 
 % --- Figure 4: Trajectory ---
-figure('Name', 'Landing Trajectory');
+f4 = figure(4);
 clf; hold on; grid on; box on;
+f4.Name = 'Landing Trajectory';
 plot(pos_discrete(2,:), pos_discrete(1,:), 'ko-', 'MarkerFaceColor', 'k', 'DisplayName', 'Optimized Trajectory');
 if plot_open_loop
     plot(result_open_loop.x(3,:), result_open_loop.x(2,:), 'b-', 'DisplayName', 'Open-Loop Trajectory');
@@ -190,8 +191,9 @@ if isfield(obj.output, 'vs') && ~isempty(obj.output.vs)
     % Check if virtual states are significantly different from actual states
     if norm(X_discrete - VS_discrete, 'fro') > 1e-3 % Tolerance for difference
         
-        figure('Name', 'Virtual States vs. Actual States');
+        f5 = figure(5);
         clf;
+        f5.Name = 'Virtual States vs. Actual States';
         
         state_names = {'Mass', 'Altitude', 'Horizontal Pos', 'Altitude Rate', 'Horiz. Pos. Rate', 'Attitude (deg)', 'Ang. Rate (deg/s)'};
         
@@ -223,6 +225,6 @@ if isfield(obj.output, 'vs') && ~isempty(obj.output.vs)
 end
 
 
-fprintf('Plotting complete.\n');
+% fprintf('Plotting complete.\n');
 set(0,'defaulttextinterpreter','tex'); % Reset to default
 end

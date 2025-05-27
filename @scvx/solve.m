@@ -15,7 +15,7 @@ for iter = 1:obj.ctrl.iter_max
     % check open loop 
     obj.result{iter} = open_loop(obj);
     
-    % plot_trajectory_data(obj,obj.result{iter});
+    % plot_trajectory_data(obj,obj.result{iter},iter);
     
     % re-convexify along new solution (needed to get new defects)
     obj.convexify();
