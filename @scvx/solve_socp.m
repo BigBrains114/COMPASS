@@ -140,8 +140,8 @@ cvx_begin quiet
             vsk(2) >= obj.auxdata.h_trig;  % minimum altitude before TD
             
             % control bounds (eq 24 and 25) 
-            % uk >= [3*obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
-            % uk <= [3*obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
+            uk >= [3*obj.auxdata.Tmin; max(obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
+            uk <= [3*obj.auxdata.Tmax; min(obj.bnds.u_max(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
 
         elseif k >= kp(2) && k < kp(3)    % low thrust
 
@@ -149,17 +149,17 @@ cvx_begin quiet
 
             if k == kp(2)
                 uk(2) == ubkm1(2);
-                % uk(1) >= obj.auxdata.Tmin;
-                % uk(1) <= obj.auxdata.Tmax;
+                uk(1) >= obj.auxdata.Tmin;
+                uk(1) <= obj.auxdata.Tmax;
             else
                 % control bounds (eq 27 and 28) 
-                % uk >= [obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
-                % uk <= [obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
+            uk >= [obj.auxdata.Tmin; max(obj.bnds.u_min(2), -obj.auxdata.dmax*sbkm1+ubkm1(2));];
+            uk <= [obj.auxdata.Tmax; min(obj.bnds.u_max(2),  obj.auxdata.dmax*sbkm1+ubkm1(2));];
             end
         elseif k >= kp(3)                 % terminal
             % control bounds (eq 29 and 30f) 
-            % uk >= [obj.auxdata.Tmin; max(-obj.bnds.u_min(2), -obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
-            % uk <= [obj.auxdata.Tmax; min( obj.bnds.u_min(2),  obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
+            uk >= [obj.auxdata.Tmin; max(obj.bnds.u_min(2), -obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
+            uk <= [obj.auxdata.Tmax; min(obj.bnds.u_max(2),  obj.auxdata.dmaxTD*sbkm1+ubkm1(2));];
             
             if k == kp
                 vsk(2) == obj.auxdata.h_trig;

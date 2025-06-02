@@ -21,8 +21,8 @@ auxdata.wmax    = deg2rad(2.5);
 % boundary conditions
 bnds = struct;
 %            [ m; x; z; vx; vz; a; w; ];   
-bnds.x_min = [  85e3;   0; -1e2; -1e2; -3e1; -pi; -pi/2 ];
-bnds.x_max = [ 100e3; 1e3;  1e2;  1e1;  3e1;  pi;  pi/2 ];
+bnds.x_min = [  85e3;   0; -1e2; -1e2; -3e1; -pi; -pi ];
+bnds.x_max = [ 100e3; 1e3;  1e2;  1e1;  3e1;  pi;  pi ];
 bnds.u_min = [        0; -deg2rad(10) ];
 bnds.u_max = [ 3*2200e3;  deg2rad(10) ];
 bnds.p_min = [ .6; .6; .6; .6;]; 
@@ -120,8 +120,8 @@ plot(result.t,result.x(2:3,:))
 set(gca,'Xlim',Tlim)
 ylabel('Position')
 subplot(3,1,3), hold on, grid on, box on
-plot(T,v,'ko','MarkerFaceColor','k','HandleVisibility','off') 
-plot(result.t,result.x(4:5,:))
+plot(T,vecnorm(v),'ko','MarkerFaceColor','k','HandleVisibility','off') 
+plot(result.t,vecnorm(result.x(4:5,:)))
 set(gca,'Xlim',Tlim)
 ylabel('Velocity')
 
